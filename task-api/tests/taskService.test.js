@@ -106,4 +106,106 @@ describe("Task Service", () => {
   expect(tasks[1].title).toBe("Task 2");
 });
 
+ test("should return empty array when page has no tasks", () => {
+  taskService.create({ title: "Task 1" });
+
+  const tasks = taskService.getPaginated(5, 10);
+
+  expect(tasks).toEqual([]);
+});
+
+ test("should return task statistics", () => {
+  taskService.create({
+    title: "Todo Task",
+    status: "todo",
+  });
+
+  taskService.create({
+    title: "Progress Task",
+    status: "in_progress",
+  });
+
+  taskService.create({
+    title: "Done Task",
+    status: "done",
+  });
+
+  const stats = taskService.getStats();
+
+  expect(stats.todo).toBe(1);
+  expect(stats.in_progress).toBe(1);
+  expect(stats.done).toBe(1);
+  expect(stats.overdue).toBe(0);
+});
+
+ test("should update a task", () => {
+  const task = taskService.create({
+    title: "Old Title",
+    priority: "low",
+  });
+
+  const updatedTask = taskService.update(task.id, {
+    title: "New Title",
+    priority: "high",
+  });
+
+  expect(updatedTask.title).toBe("New Title");
+  expect(updatedTask.priority).toBe("high");
+  expect(updatedTask.id).toBe(task.id);
+});
+
+test("should return null when updating non-existent task", () => {
+  const result = taskService.update("invalid-id", {
+    title: "New Title",
+  });
+
+  expect(result).toBeNull();
+});
+
+test("should delete a task", () => {
+  const task = taskService.create({
+    title: "Delete Me",
+  });
+
+  const result = taskService.remove(task.id);
+
+  expect(result).toBe(true);
+  expect(taskService.findById(task.id)).toBeUndefined();
+});
+
+test("should return false when deleting non-existent task", () => {
+  const result = taskService.remove("invalid-id");
+
+  expect(result).toBe(false);
+});
+
+test("should mark task as complete without changing priority", () => {
+  const task = taskService.create({
+    title: "Complete Me",
+    priority: "high",
+  });
+
+  const completedTask = taskService.completeTask(task.id);
+
+  expect(completedTask.status).toBe("done");
+  expect(completedTask.priority).toBe("high");
+  expect(completedTask.completedAt).not.toBeNull();
+});
+
+test("should only return tasks with exact matching status", () => {
+  taskService.create({
+    title: "Todo Task",
+    status: "todo",
+  });
+
+  taskService.create({
+    title: "Done Task",
+    status: "done",
+  });
+
+  const tasks = taskService.getByStatus("do");
+
+  expect(tasks).toEqual([]);
+});
+ 
 });
